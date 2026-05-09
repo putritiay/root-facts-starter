@@ -96,6 +96,7 @@ class FunFactService {
         temperature: this.config.temperature,
         do_sample: true,
         top_p: this.config.topP,
+        repetition_penalty: 2.0,
       });
 
       const endTime = performance.now();
@@ -134,6 +135,19 @@ class FunFactService {
   // TODO [Basic] ✅ Periksa apakah model siap dan tidak sedang menghasilkan fakta
   isReady() {
     return this.isModelLoaded && !this.isGenerating;
+  }
+
+  // Membersihkan memory dari model generative AI
+  async clearMemory() {
+    if (this.generator && typeof this.generator.dispose === 'function') {
+      try {
+        await this.generator.dispose();
+      } catch (error) {
+        console.warn("Failed to dispose generator:", error);
+      }
+    }
+    this.generator = null;
+    this.isModelLoaded = false;
   }
 }
 

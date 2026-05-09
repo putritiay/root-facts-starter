@@ -273,19 +273,36 @@ class RootFactsApp {
 
       this.ui.updateCameraUI(false, true);
 
-      if (this.generator && this.generator.isReady()) {
-        await createDelay(this.config.funFactGenerationDelay);
-        this.ui.updateFunFactState("loading");
+      if (this.generator) {
+        if (!this.generator.isModelLoaded) {
+          this.ui.updateHeaderStatus("Memuat model Fun Fact...", true);
+          try {
+            await this.generator.loadModel();
+          } catch (e) {
+            logError("Gagal memuat ulang model fun fact", e);
+          }
+          this.ui.updateHeaderStatus("Siap", false);
+        }
 
-        try {
-          const funFactData = await this.generator.generateFunFact(
-            detectionResult.className,
-            this.currentTone,
-          );
-          this.currentFunFact = funFactData.funFact;
-          this.ui.updateFunFactState("success", funFactData);
-        } catch (funFactError) {
-          logError("Gagal menghasilkan konten fun fact", funFactError);
+        if (this.generator.isReady()) {
+          await createDelay(this.config.funFactGenerationDelay);
+          this.ui.updateFunFactState("loading");
+
+          try {
+            const funFactData = await this.generator.generateFunFact(
+              detectionResult.className,
+              this.currentTone,
+            );
+            this.currentFunFact = funFactData.funFact;
+            this.ui.updateFunFactState("success", funFactData);
+
+            // Bersihkan memory setelah selesai memberikan prediksi untuk menghindari bug
+            await this.generator.clearMemory();
+          } catch (funFactError) {
+            logError("Gagal menghasilkan konten fun fact", funFactError);
+            this.ui.updateFunFactState("error");
+          }
+        } else {
           this.ui.updateFunFactState("error");
         }
       } else {
