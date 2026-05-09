@@ -89,7 +89,8 @@ class FunFactService {
         return;
       }
 
-      const prompt = `Write a ${tone} fun fact about "${vegetable}" in 1-2 sentences.`;
+      const prompt = `
+Write in ${tone} style about ${vegetable} in 1 to 2 sentences`;
 
       const response = await this.generator(prompt, {
         max_new_tokens: this.config.maxTokens,
