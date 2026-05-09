@@ -31,7 +31,7 @@ class RootFactsApp {
   // TODO [Basic] ✅ Bind toggle camera event dengan nama onToggleCamera
   // TODO [Basic] ✅ Bind camera change event dengan nama onCameraChange
   // TODO [Skilled] ✅ Bind FPS change event dengan nama onFPSChange
-  // TODO [Skilled] Bind copy fun fact event dengan nama onCopy
+  // TODO [Skilled] ✅ Bind copy fun fact event dengan nama onCopy
   // TODO [Advanced] ✅ Bind tone change event dengan nama onToneChange
 
   bindEvents() {
@@ -50,6 +50,7 @@ class RootFactsApp {
       onToneChange: (newTone) => {
         this.currentTone = newTone;
       },
+      onCopy: async () => await this.copyFunFact(),
     });
   }
 
@@ -112,7 +113,48 @@ class RootFactsApp {
     }
   }
 
-  // TODO [Skilled] Buatlah metode untuk menyalin fun fact ke clipboard
+  // TODO [Skilled] ✅ Buatlah metode untuk menyalin fun fact ke clipboard
+  async copyFunFact() {
+    const textToCopy = this.currentFunFact || this.ui.getFunFactText();
+    if (!textToCopy) return;
+
+    let success = false;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        success = true;
+      } catch (err) {
+        console.warn("Modern clipboard API gagal, beralih ke fallback", err);
+      }
+    }
+
+    if (!success) {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        success = document.execCommand("copy");
+        textArea.remove();
+      } catch (err) {
+        console.error("Fallback copy juga gagal", err);
+      }
+    }
+
+    if (success) {
+      this.ui.setCopyButtonCopied();
+      setTimeout(() => {
+        this.ui.resetCopyButton();
+      }, 2000);
+    } else {
+      logError("Gagal menyalin fun fact", new Error("Copy tidak didukung browser"));
+    }
+  }
 
   // TODO [Basic] ✅ Implementasikan metode untuk mengaktifkan atau menonaktifkan kamera
   toggleCamera() {
@@ -240,6 +282,7 @@ class RootFactsApp {
             detectionResult.className,
             this.currentTone,
           );
+          this.currentFunFact = funFactData.funFact;
           this.ui.updateFunFactState("success", funFactData);
         } catch (funFactError) {
           logError("Gagal menghasilkan konten fun fact", funFactError);
